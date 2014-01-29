@@ -1,44 +1,49 @@
 #include <Servo.h>
 
-const int rightAnalog = 0;              // Right analog pin
-const int leftAnalog = 1;               // Left analog pin
+typedef enum {LEFT, RIGHT, STRAIGHT} states;
+states state;
+
+const int rightAnalog = 1;              // Right analog pin
+const int leftAnalog = 0;               // Left analog pin
 const int rightDigital = 9;             // Right digital pin
 const int leftDigital = 10;             // Left digital pin
 
-const int leftBlackAnalogValue = 36;    // Left black analog value
-const int rightBlackAnalogValue = 64;   // Right black analog value
+const int leftBlackAnalogValue = 30;    // Left black analog value = 19...10
+const int rightBlackAnalogValue = 70;   // Right black analog value = 88...
 
-const int leftWhiteAnalogValue = 95;     // Left white abalog value
-const int rightWhiteAnalogValue = 96;    // Right white analog value
+const int leftWhiteAnalogValue = 52;     // Left white abalog value = 62...55
+const int rightWhiteAnalogValue = 82;   // Right white analog value = 119...100
 
 // Turn left
 const int lsStop = 91;                  // Left stop value
 const int lsRight = 87;                 // Left servo value for right turn
 
 // Turn right
-const int rsStop = 91;                  // Right stop value
+const int rsStop = 90;                  // Right stop value
 const int rsLeft = 93;                  // Right servo value for left turn
 
 // Go straight
-const int lsStr = 93;                   // Left servo value for straight
-const int rsStr = 89;                   // Right servo value for straight
+const float lsStr = 92.5;                   // Left servo value for straight
+const float rsStr = 89.1;                   // Right servo value for straight
 
-const int delayValue = 100;             // Delay value
+const int delayValue = 20;             // Delay value
 
 Servo leftServo;                        // Left servo
 Servo rightServo;                       // Right servo
 
 void setup() {
-  Serial.begin(9600);                   // Necessary to set up Serial port
+  Serial.begin(115200);                   // Necessary to set up Serial port
   leftServo.attach(leftDigital);
   rightServo.attach(rightDigital);
 }
 
 void loop() {
-  testAnalogPin();
+  //testAnalogPin();
   movement();
   //turnLeft();
-  //turnRight();  
+  //turnRight();
+  //goStraight();
+  //Stop(); 
 }
 
 void turnLeft() {
@@ -68,25 +73,35 @@ void Stop() {
 void movement() {
   // Both left and right sensors detect black
   if (leftSensorIsBlack() && rightSensorIsBlack()) {
+    Stop();
     goStraight();
+    state = STRAIGHT;
   }
   // Left sensor detects black, right sensor detects white
   else if (leftSensorIsBlack() && rightSensorIsWhite()) {
-    Stop(); 
+    Stop();
     turnLeft();
+    state = LEFT;
   }
   // Left sensor detects white, right sensor detects black
   else if (leftSensorIsWhite() && rightSensorIsBlack()) {
-    Stop(); 
+    Stop();
     turnRight();
+    state = RIGHT;
   }
  // Both left and right sensors detect white
   else {
-    Stop();
-    while (leftSensorIsWhite() && rightSensorIsWhite()) {
-      // if it doesn't find black in _____ then go right
-      turnLeft();
-      turnRight();
+    while (leftSensorIsWhite() && rightSensorIsWhite()) {        
+      if (state == RIGHT) {
+        Stop();
+        turnLeft();
+        state = LEFT;
+      }
+      else if (state == LEFT) {
+        Stop();
+        turnRight();
+        state = RIGHT;
+      }
     }
   }
 }
